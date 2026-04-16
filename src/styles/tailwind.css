@@ -1,0 +1,23 @@
+@import 'tailwindcss' source(none);
+@source '../**/*.{js,ts,jsx,tsx}';
+
+@import 'tw-animate-css';
+
+/* Rich text editor placeholder */
+[contenteditable][data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Hide scrollbar on toolbar but keep scrolling */
+.toolbar-scroll::-webkit-scrollbar {
+  display: none;
+}
+.toolbar-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Tooltip attributes are handled by the portal-based TooltipProvider component */
