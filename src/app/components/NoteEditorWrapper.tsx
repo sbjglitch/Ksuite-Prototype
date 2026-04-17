@@ -1,5 +1,8 @@
 import React, { useRef, useCallback, useState, useEffect } from "react";
+import { X, Eye } from "lucide-react";
 import svgPaths from "../../imports/svg-t9ef4vzcyk";
+import { AttachDocumentModal, type AttachedFileInfo } from "./AttachDocumentModal";
+import { HyperlinkModal, type HyperlinkInsertPayload } from "./HyperlinkModal";
 
 /* ───────── types ───────── */
 
@@ -181,6 +184,90 @@ function InsertIcon() {
       <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
         <g><g /><path d="M8 5.33333V10.6667" stroke="var(--stroke-0, currentColor)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.25" /><path d="M10.6667 8H5.33333" stroke="var(--stroke-0, currentColor)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.25" /><path clipRule="evenodd" d={svgPaths.p231b48c0} fillRule="evenodd" stroke="var(--stroke-0, currentColor)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.25" /></g>
       </svg>
+    </div>
+  );
+}
+
+function AttachDocumentIcon() {
+  return (
+    <div className="relative shrink-0 size-[16px]">
+      <svg className="absolute block size-full" fill="none" viewBox="0 0 16 16">
+        <path d="M13.3333 7.33333L7.33333 13.3333C6.22876 14.4379 4.43791 14.4379 3.33333 13.3333C2.22876 12.2288 2.22876 10.4379 3.33333 9.33333L9.33333 3.33333C10.0697 2.59695 11.2636 2.59695 12 3.33333C12.7364 4.06971 12.7364 5.26362 12 6L6.66667 11.3333C6.29848 11.7015 5.70152 11.7015 5.33333 11.3333C4.96514 10.9652 4.96514 10.3682 5.33333 10L10 5.33333" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.25" />
+      </svg>
+    </div>
+  );
+}
+
+function ReferenceNoteIcon() {
+  return (
+    <div className="relative shrink-0 size-[16px]">
+      <svg className="absolute block size-full" fill="none" viewBox="0 0 16 16">
+        <path d="M8.66667 2H4C3.26362 2 2.66667 2.59695 2.66667 3.33333V12.6667C2.66667 13.403 3.26362 14 4 14H12C12.7364 14 13.3333 13.403 13.3333 12.6667V6.66667L8.66667 2Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.25" />
+        <path d="M8.66667 2V6.66667H13.3333" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.25" />
+        <path d="M10.6667 8.66667H5.33333" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.25" />
+        <path d="M10.6667 11.3333H5.33333" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.25" />
+        <path d="M6.66667 6H5.33333" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.25" />
+      </svg>
+    </div>
+  );
+}
+
+function InsertDropdown({ onAttachDocument, onReferenceNote }: {
+  onAttachDocument?: () => void;
+  onReferenceNote?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <div className="bg-card relative rounded-lg shrink-0" ref={ref}>
+      <TBtn
+        onClick={() => setOpen((v) => !v)}
+        active={open}
+        title="Insert"
+      >
+        <InsertIcon />
+      </TBtn>
+      <div aria-hidden="true" className="absolute border border-border inset-0 pointer-events-none rounded-lg" style={{ boxShadow: 'var(--elevation-sm)' }} />
+      {open && (
+        <div className="absolute top-full right-0 mt-[4px] bg-card border border-border rounded-lg z-50 py-[4px] min-w-[160px]" style={{ boxShadow: 'var(--elevation-sm)' }}>
+          <button
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onAttachDocument?.();
+              setOpen(false);
+            }}
+            className="w-full flex gap-[8px] items-center px-[8px] py-[8px] hover:bg-muted cursor-pointer rounded-sm transition-colors"
+          >
+            <AttachDocumentIcon />
+            <span className="font-[var(--font-family-manrope)] font-[var(--font-weight-medium)] text-[12px] text-foreground whitespace-nowrap leading-[16px]">
+              Attach Document
+            </span>
+          </button>
+          <button
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onReferenceNote?.();
+              setOpen(false);
+            }}
+            className="w-full flex gap-[8px] items-center px-[8px] py-[8px] hover:bg-muted cursor-pointer rounded-sm transition-colors"
+          >
+            <ReferenceNoteIcon />
+            <span className="font-[var(--font-family-manrope)] font-[var(--font-weight-medium)] text-[12px] text-foreground whitespace-nowrap leading-[16px]">
+              Reference Note
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -632,6 +719,144 @@ function MinimizedBarActive({ onExpand }: { onExpand: () => void }) {
   );
 }
 
+/* ───────── Attached file chip ───────── */
+
+function AttachedFileChip({
+  info,
+  onView,
+  onRemove,
+}: {
+  info: AttachedFileInfo;
+  onView: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div
+      className="bg-card flex gap-[6px] items-center px-[8px] py-[6px] relative rounded-lg shrink-0"
+      style={{ border: "1px solid var(--border)", boxShadow: "var(--elevation-sm)" }}
+    >
+      {/* Clip icon */}
+      <div className="relative shrink-0 size-[14px]">
+        <svg className="absolute block size-full" fill="none" viewBox="0 0 16 16">
+          <path
+            d="M13.3333 7.33333L7.33333 13.3333C6.22876 14.4379 4.43791 14.4379 3.33333 13.3333C2.22876 12.2288 2.22876 10.4379 3.33333 9.33333L9.33333 3.33333C10.0697 2.59695 11.2636 2.59695 12 3.33333C12.7364 4.06971 12.7364 5.26362 12 6L6.66667 11.3333C6.29848 11.7015 5.70152 11.7015 5.33333 11.3333C4.96514 10.9652 4.96514 10.3682 5.33333 10L10 5.33333"
+            stroke="var(--secondary)"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.25"
+          />
+        </svg>
+      </div>
+
+      <span
+        className="font-[var(--font-family-manrope)] font-[var(--font-weight-medium)] text-[var(--text-sm)] text-foreground whitespace-nowrap"
+        style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis" }}
+      >
+        {info.name}
+      </span>
+
+      {/* View button */}
+      <button
+        onClick={onView}
+        className="flex items-center justify-center rounded-sm p-[2px] cursor-pointer transition-colors hover:bg-muted"
+        title="View document"
+      >
+        <Eye size={12} className="text-muted-foreground" />
+      </button>
+
+      {/* Remove button */}
+      <button
+        onClick={onRemove}
+        className="flex items-center justify-center rounded-sm p-[2px] cursor-pointer transition-colors hover:bg-muted"
+        title="Remove attachment"
+      >
+        <X size={12} className="text-muted-foreground" />
+      </button>
+    </div>
+  );
+}
+
+/* ───────── Fullscreen viewer for already-attached files ───────── */
+
+function AttachedFileViewer({
+  info,
+  onClose,
+}: {
+  info: AttachedFileInfo;
+  onClose: () => void;
+}) {
+  const isImage = info.type.startsWith("image/");
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-[5vh_5vw]">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0"
+        style={{ background: "rgba(0,0,0,0.6)" }}
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div
+        className="relative flex flex-col overflow-hidden"
+        style={{
+          width: "90vw",
+          height: "90vh",
+          borderRadius: 12,
+          background: "#0f1624",
+          boxShadow: "0px 24px 48px -12px rgba(0,0,0,0.5)",
+          border: "1px solid #1c2840",
+        }}
+      >
+        {/* Top bar */}
+        <div
+          className="flex items-center justify-between px-[20px] py-[13px] shrink-0"
+          style={{ borderBottom: "1px solid #1c2840" }}
+        >
+          <div className="flex items-center gap-[10px]">
+            <svg width="15" height="15" fill="none" viewBox="0 0 16 16">
+              <path d="M8.66667 2H4C3.26362 2 2.66667 2.59695 2.66667 3.33333V12.6667C2.66667 13.403 3.26362 14 4 14H12C12.7364 14 13.3333 13.403 13.3333 12.6667V6.66667L8.66667 2Z" stroke="#5c6e93" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.25" />
+              <path d="M8.66667 2V6.66667H13.3333" stroke="#5c6e93" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.25" />
+            </svg>
+            <span
+              className="font-['Manrope',sans-serif] font-medium text-[14px] text-white"
+              style={{ maxWidth: 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+            >
+              {info.name}
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="size-[32px] rounded-[8px] flex items-center justify-center cursor-pointer transition-colors"
+            style={{ border: "1px solid #2a3448" }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "#1c2335")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "transparent")}
+          >
+            <X size={16} className="text-[#a2a7b4]" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-h-0 flex items-center justify-center p-[20px]">
+          {isImage ? (
+            <img src={info.url} alt={info.name} className="max-h-full max-w-full rounded-[4px]" style={{ objectFit: "contain" }} />
+          ) : (
+            <iframe src={info.url} className="w-full h-full rounded-[4px] border-none" title={info.name} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ───────── Main exported component ───────── */
 
 export function NoteEditorWithMarkup({ onMarkDocument, markerChips, onMarkerChipClick, isMinimized, onMinimize, onExpand }: {
@@ -643,9 +868,48 @@ export function NoteEditorWithMarkup({ onMarkDocument, markerChips, onMarkerChip
   onExpand?: () => void;
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const savedSelectionRef = useRef<Range | null>(null);
+  const hyperlinkFileMapRef = useRef<Record<string, AttachedFileInfo>>({});
   const [, forceUpdate] = useState(0);
   const [hasContent, setHasContent] = useState(false);
   const refreshToolbar = useCallback(() => forceUpdate((n) => n + 1), []);
+
+  /* ── Attach document state ── */
+  const [attachModalOpen, setAttachModalOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFileInfo[]>([]);
+  const [viewingFile, setViewingFile] = useState<AttachedFileInfo | null>(null);
+  const [hyperlinkModalOpen, setHyperlinkModalOpen] = useState(false);
+  const [hyperlinkInitialDisplayText, setHyperlinkInitialDisplayText] = useState("");
+
+  const handleAttachDocumentClick = useCallback(() => {
+    setTimeout(() => fileInputRef.current?.click(), 10);
+  }, []);
+
+  const handleFileSelected = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPendingFile(file);
+      setAttachModalOpen(true);
+    }
+    e.target.value = "";
+  }, []);
+
+  const handleFileAttached = useCallback((info: AttachedFileInfo) => {
+    setAttachedFiles((prev) => [...prev, info]);
+    setAttachModalOpen(false);
+    setPendingFile(null);
+  }, []);
+
+  const handleAttachModalClose = useCallback(() => {
+    setAttachModalOpen(false);
+    setPendingFile(null);
+  }, []);
+
+  const handleRemoveAttachment = useCallback((url: string) => {
+    setAttachedFiles((prev) => prev.filter((f) => f.url !== url));
+  }, []);
 
   // Track whether the editor has content
   const trackContent = useCallback(() => {
@@ -662,8 +926,79 @@ export function NoteEditorWithMarkup({ onMarkDocument, markerChips, onMarkerChip
   const isUnderline = queryActive("underline");
 
   const handleCreateLink = useCallback(() => {
-    const url = prompt("Enter URL:");
-    if (url) execFormat("createLink", url);
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      savedSelectionRef.current = selection.getRangeAt(0).cloneRange();
+      setHyperlinkInitialDisplayText(selection.toString().trim());
+    } else {
+      savedSelectionRef.current = null;
+      setHyperlinkInitialDisplayText("");
+    }
+    setHyperlinkModalOpen(true);
+  }, []);
+
+  const handleInsertHyperlink = useCallback((payload: HyperlinkInsertPayload) => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+
+    const sel = window.getSelection();
+    const savedRange = savedSelectionRef.current;
+    if (sel) {
+      if (savedRange) {
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+      } else if (editorRef.current) {
+        const range = document.createRange();
+        range.selectNodeContents(editorRef.current);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+
+    const safeText = payload.displayText
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    const safeHref = payload.href.replace(/"/g, "&quot;");
+    if (payload.file) {
+      const fileLinkId = `file-link-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      hyperlinkFileMapRef.current[fileLinkId] = {
+        name: payload.file.name,
+        size: payload.file.size,
+        url: payload.file.url,
+        type: payload.file.type,
+      };
+      document.execCommand(
+        "insertHTML",
+        false,
+        `<a href="${safeHref}" data-file-link-id="${fileLinkId}" class="text-[#0c3080] underline">${safeText}</a>`
+      );
+      savedSelectionRef.current = null;
+      refreshToolbar();
+      trackContent();
+      return;
+    }
+
+    document.execCommand(
+      "insertHTML",
+      false,
+      `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${safeText}</a>`
+    );
+
+    savedSelectionRef.current = null;
+    refreshToolbar();
+    trackContent();
+  }, [refreshToolbar, trackContent]);
+
+  const handleEditorClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const anchor = (e.target as HTMLElement).closest?.("a[data-file-link-id]") as HTMLAnchorElement | null;
+    if (!anchor) return;
+    e.preventDefault();
+    const linkId = anchor.getAttribute("data-file-link-id");
+    if (!linkId) return;
+    const fileInfo = hyperlinkFileMapRef.current[linkId];
+    if (fileInfo) setViewingFile(fileInfo);
   }, []);
 
   const handleInsertTable = useCallback(() => {
@@ -712,6 +1047,41 @@ export function NoteEditorWithMarkup({ onMarkDocument, markerChips, onMarkerChip
 
   return (
     <div className="relative rounded-xl size-full" data-name="Note Editor">
+      {/* Hidden file input for "Attach Document" */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.gif,.webp"
+        className="hidden"
+        onChange={handleFileSelected}
+      />
+
+      {/* Attach document modal (uploading → success) */}
+      <AttachDocumentModal
+        open={attachModalOpen}
+        file={pendingFile}
+        onClose={handleAttachModalClose}
+        onAttach={handleFileAttached}
+      />
+
+      <HyperlinkModal
+        open={hyperlinkModalOpen}
+        onClose={() => {
+          setHyperlinkModalOpen(false);
+          setHyperlinkInitialDisplayText("");
+          savedSelectionRef.current = null;
+        }}
+        onInsert={handleInsertHyperlink}
+        initialDisplayText={hyperlinkInitialDisplayText}
+      />
+
+      {/* Fullscreen viewer for attached files */}
+      {viewingFile && (
+        <AttachedFileViewer
+          info={viewingFile}
+          onClose={() => setViewingFile(null)}
+        />
+      )}
       {/* ── Layer 1: Minimized bar (absolute, fades in when minimized) ── */}
       <div
         className="absolute inset-0 z-[2] rounded-xl"
@@ -802,10 +1172,7 @@ export function NoteEditorWithMarkup({ onMarkDocument, markerChips, onMarkerChip
 
                 {/* Right-side action icons (insert, template, mark, link) */}
                 <div className="flex gap-[8px] items-center shrink-0">
-                  <div className="bg-card relative rounded-lg shrink-0">
-                    <TBtn onClick={handleInsertTable} title="Insert"><InsertIcon /></TBtn>
-                    <div aria-hidden="true" className="absolute border border-border inset-0 pointer-events-none rounded-lg" style={{ boxShadow: 'var(--elevation-sm)' }} />
-                  </div>
+                  <InsertDropdown onAttachDocument={handleAttachDocumentClick} />
                   <div className="bg-card relative rounded-lg shrink-0">
                     <TBtn onClick={() => {}} title="Template"><TemplateIcon /></TBtn>
                     <div aria-hidden="true" className="absolute border border-border inset-0 pointer-events-none rounded-lg" style={{ boxShadow: 'var(--elevation-sm)' }} />
@@ -844,6 +1211,7 @@ export function NoteEditorWithMarkup({ onMarkDocument, markerChips, onMarkerChip
                   ref={editorRef}
                   contentEditable
                   suppressContentEditableWarning
+                  onClick={handleEditorClick}
                   onKeyUp={() => { refreshToolbar(); trackContent(); }}
                   onMouseUp={refreshToolbar}
                   onInput={trackContent}
@@ -866,6 +1234,22 @@ export function NoteEditorWithMarkup({ onMarkDocument, markerChips, onMarkerChip
                         key={chip.id}
                         marker={chip}
                         onClick={() => onMarkerChipClick?.(chip.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Attached file chips */}
+              {attachedFiles.length > 0 && (
+                <div className="shrink-0 w-full px-[8px] pb-[8px]">
+                  <div className="flex items-center gap-[6px] flex-wrap">
+                    {attachedFiles.map((file) => (
+                      <AttachedFileChip
+                        key={file.url}
+                        info={file}
+                        onView={() => setViewingFile(file)}
+                        onRemove={() => handleRemoveAttachment(file.url)}
                       />
                     ))}
                   </div>

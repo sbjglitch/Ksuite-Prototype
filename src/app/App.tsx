@@ -22,6 +22,9 @@ import { NoteEditorWithMarkup } from "./components/NoteEditorWrapper";
 import { DocumentPage } from "./components/DocumentPages";
 import { TooltipProvider } from "./components/TooltipProvider";
 import { ToastProvider, useToast } from "./components/Toast";
+import { SendMessageModal, type MessageRecipient } from "./components/SendMessageModal";
+import { QuickAccessDropdown } from "./components/QuickAccessDropdown";
+import { Phone as LucidePhone, Mail as LucideMail } from "lucide-react";
 import imgUserPhoto from "figma:asset/beb2533f2c85b048fc5f30200142b8dfd0889992.png";
 import imgTableData from "figma:asset/f739562be998d02a6ba61cbb5e682aaac93ef8b2.png";
 import noteCardSvgPaths from "../imports/svg-xipt6l5h8s";
@@ -181,19 +184,7 @@ function Header() {
             </div>
             {/* Right: Action buttons */}
             <div className="flex items-center shrink-0">
-              {/* Quick Access */}
-              <div className="flex items-start rounded-[var(--radius)] shrink-0">
-                <div className="bg-card flex gap-[8px] items-center justify-center overflow-clip px-[14px] py-[8px] rounded-[var(--radius)] shrink-0">
-                  <div className="relative shrink-0 size-[16px]">
-                    <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
-                      <path clipRule="evenodd" d={headerSvgPaths.p1c98fc00} fillRule="evenodd" stroke="#0C3080" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-                      <path d="M13.3333 2.66667H8" stroke="var(--primary)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-                      <path d="M10.6667 5.33333H13.3333" stroke="var(--primary)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-                    </svg>
-                  </div>
-                  <p className="font-[var(--font-family-manrope)] font-[var(--font-weight-semibold)] leading-[20px] shrink-0 text-foreground text-[var(--text-sm)] whitespace-nowrap">Quick Access</p>
-                </div>
-              </div>
+              <QuickAccessDropdown />
               {/* Route Keys and Users */}
               <div className="flex items-start rounded-[var(--radius)] shrink-0">
                 <div className="bg-card flex gap-[8px] items-center justify-center overflow-clip px-[14px] py-[8px] rounded-[var(--radius)] shrink-0">
@@ -337,6 +328,8 @@ interface NoteCardProps {
   role: string;
   noteNum: string;
   dateTime: string;
+  phone?: string;
+  email?: string;
   bodyTitle?: string;
   bodyText: string;
   bodyExtended?: string;
@@ -354,6 +347,8 @@ function NoteCard({
   role,
   noteNum,
   dateTime,
+  phone,
+  email,
   bodyTitle,
   bodyText,
   bodyExtended,
@@ -364,7 +359,26 @@ function NoteCard({
   onMarkerClick,
 }: NoteCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [contactHover, setContactHover] = useState(false);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
   const canExpand = !!(bodyExtended || hasTable);
+
+  const contactPhone = phone ?? "+91 98765 43210";
+  const contactEmail = email ?? `${name.toLowerCase().replace(/\s+/g, ".")}@ksuite.gov.in`;
+
+  const recipient: MessageRecipient = {
+    name,
+    role,
+    phone: contactPhone,
+    email: contactEmail,
+    avatarUrl: imgUserPhoto,
+    avatarInitials: name
+      .split(/\s+/)
+      .map((s) => s[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase(),
+  };
 
   return (
     <div className="bg-card relative rounded-[var(--radius)] w-full">
@@ -391,13 +405,76 @@ function NoteCard({
                 <span>{role}</span>
               </div>
             </div>
-            {/* Message button */}
-            <button className="bg-card relative rounded-[var(--radius)] shrink-0 size-[36px] cursor-pointer" data-tooltip="Message">
-              <div className="flex items-center justify-center size-full p-[8px]">
-                <NcMessageIcon />
-              </div>
-              <div aria-hidden="true" className="absolute border border-border inset-0 pointer-events-none rounded-[var(--radius)]" style={{ boxShadow: 'var(--elevation-sm)' }} />
-            </button>
+            {/* Message button — with rich hover tooltip (phone + email) */}
+            <div
+              className="relative"
+              onMouseEnter={() => setContactHover(true)}
+              onMouseLeave={() => setContactHover(false)}
+            >
+              <button
+                onClick={() => setMessageModalOpen(true)}
+                className="bg-card relative rounded-[var(--radius)] shrink-0 size-[36px] cursor-pointer transition-colors hover:bg-muted"
+                aria-label={`Message ${name}`}
+              >
+                <div className="flex items-center justify-center size-full p-[8px]">
+                  <NcMessageIcon />
+                </div>
+                <div aria-hidden="true" className="absolute border border-border inset-0 pointer-events-none rounded-[var(--radius)]" style={{ boxShadow: 'var(--elevation-sm)' }} />
+              </button>
+
+              {/* Rich hover tooltip */}
+              {contactHover && (
+                <div
+                  className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+                  style={{ top: "calc(100% + 8px)", zIndex: 50 }}
+                >
+                  <div
+                    className="flex flex-col gap-[6px] rounded-[8px] px-[12px] py-[10px] whitespace-nowrap"
+                    style={{
+                      background: "var(--foreground)",
+                      boxShadow: "0px 8px 16px -4px rgba(0,0,0,0.25)",
+                      minWidth: 200,
+                    }}
+                  >
+                    <div className="flex items-center gap-[8px]">
+                      <LucidePhone size={12} color="#a2a7b4" />
+                      <span
+                        className="font-['Manrope',sans-serif] font-medium text-[12px] leading-[16px]"
+                        style={{ color: "var(--background)" }}
+                      >
+                        {contactPhone}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-[8px]">
+                      <LucideMail size={12} color="#a2a7b4" />
+                      <span
+                        className="font-['Manrope',sans-serif] font-medium text-[12px] leading-[16px]"
+                        style={{ color: "var(--background)" }}
+                      >
+                        {contactEmail}
+                      </span>
+                    </div>
+                    <span
+                      className="font-['Manrope',sans-serif] font-normal text-[10px] leading-[14px] pt-[2px]"
+                      style={{ color: "#a2a7b4", borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: 2, paddingTop: 6 }}
+                    >
+                      Click to send a message
+                    </span>
+                    {/* Arrow */}
+                    <div
+                      className="absolute left-1/2 -translate-x-1/2"
+                      style={{
+                        top: -5,
+                        width: 10,
+                        height: 10,
+                        background: "var(--foreground)",
+                        transform: "translateX(-50%) rotate(45deg)",
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           {/* Date / time */}
           <div className="flex items-center gap-[8px]">
@@ -513,6 +590,13 @@ function NoteCard({
         </div>
       </div>
       <div aria-hidden="true" className="absolute border-[1.5px] border-border inset-0 pointer-events-none rounded-[var(--radius)]" style={{ boxShadow: 'var(--elevation-sm)' }} />
+
+      {/* Send message modal — rendered via portal inside the modal component */}
+      <SendMessageModal
+        open={messageModalOpen}
+        recipient={recipient}
+        onClose={() => setMessageModalOpen(false)}
+      />
     </div>
   );
 }
@@ -636,6 +720,8 @@ function NotesPanel({ onMarkDocument, savedMarkers, onMarkerChipClick, onNoteCar
         <NoteCard
           name="Saleena P"
           role="Assistant Manager  E1  PEN: 678 234"
+          phone="+91 98765 43210"
+          email="saleena.p@ksuite.gov.in"
           noteNum="01"
           dateTime="Thu, Jan 23 2025, 04:48 PM"
           bodyTitle="Gsgah"
@@ -662,6 +748,8 @@ function NotesPanel({ onMarkDocument, savedMarkers, onMarkerChipClick, onNoteCar
         <NoteCard
           name="Saleena P"
           role="Assistant Manager  E1  PEN: 678 234"
+          phone="+91 98765 43210"
+          email="saleena.p@ksuite.gov.in"
           noteNum="02"
           dateTime="Thu, Jan 23 2025, 04:48 PM"
           bodyTitle="Subject : G"
